@@ -1,0 +1,786 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String
+  phone         String?   @unique // Primary phone number for SMS
+  role          String    @default("worker") // "worker", "contractor", "admin"
+  workerRole    String?   // "carpenter", "laborer", "operator", "foreman", etc.
+  skills        String[]  @default([])
+  availability  String    @default("available") // "available", "busy", "off"
+  smsOptIn      Boolean   @default(true) // User consent for SMS
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Multi-tenancy
+
+  projects      Project[]
+  dailyReports  DailyReport[]
+  changeOrders  ChangeOrder[]
+  dispatchAssignments DispatchAssignment[]
+  dispatchCommunications DispatchCommunication[]
+  dispatchSnapshots DispatchSnapshot[]
+  dispatchWorkerProfile DispatchWorker?
+
+  // Points & Rewards
+  points        UserPoints?
+  pointTransactions PointTransaction[]
+  achievements  UserAchievement[]
+  redemptions   RewardRedemption[]
+
+  @@index([email])
+  @@index([phone])
+}
+
+model Project {
+  id            String    @id @default(cuid())
+  name          String
+  location      String?
+  startDate     DateTime
+
+  createdBy     User      @relation(fields: [userId], references: [id])
+  userId        String
+
+  // Multi-tenancy
+
+  tasks         Task[]     // Legacy - will be removed
+  phases        Phase[]
+  dailyReports  DailyReport[]
+  changeOrders  ChangeOrder[]
+  equipment     Equipment[]
+  equipmentBudgets EquipmentBudget[]
+  materialBudgets MaterialBudget[]
+  subcontractorBudgets SubcontractorBudget[]
+  schedule      ProjectSchedule?
+  costCodes     CostCode[]
+  hoursApprovals HoursApproval[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+}
+
+model Phase {
+  id            String    @id @default(cuid())
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId     String
+  
+  name          String    // "Foundation", "Framing", etc.
+  orderIndex    Int       // For ordering phases
+  
+  subPhases     SubPhase[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model SubPhase {
+  id            String    @id @default(cuid())
+  phase         Phase     @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  phaseId       String
+  
+  name          String    // "Trench 1", "Pour Footings", etc.
+  costCode      String?   // Cost code from CSV column A
+  budget        Float?    // Budget amount from CSV column E
+  budgetHours   Float
+  budgetQuantity Float?
+  unit          String?   // "ft", "cy", "sf", etc.
+  orderIndex    Int       // For ordering subphases within a phase
+  
+  // Initial progress for mid-project starts
+  initialHours  Float     @default(0)
+  initialQuantity Float?
+  
+  dailyProgress DailyProgress[]
+  changeOrders  ChangeOrder[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// Legacy Task model - will be removed after migration
+model Task {
+  id            String    @id @default(cuid())
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId     String
+  
+  name          String    // "Trench 1", "Excavation", etc.
+  budgetHours   Float
+  budgetQuantity Float?
+  unit          String?   // "ft", "cy", "sf", etc.
+  
+  // Initial progress for mid-project starts
+  initialHours  Float     @default(0)
+  initialQuantity Float?
+  
+  dailyProgress DailyProgress[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model DailyReport {
+  id            String    @id @default(cuid())
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId     String
+  date          DateTime
+  
+  weather       String?
+  notes         String?
+  
+  // Crew information
+  crewCount     Int       @default(0)
+  hoursWorked   Float     @default(0)
+  
+  createdBy     User      @relation(fields: [userId], references: [id])
+  userId        String
+  
+  progress      DailyProgress[]
+  materials     DailyReportMaterial[]
+  equipment     DailyReportEquipment[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@unique([projectId, date])
+}
+
+model DailyProgress {
+  id            String    @id @default(cuid())
+  dailyReport   DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  reportId      String
+  
+  // Support both legacy tasks and new subphases during migration
+  task          Task?     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId        String?
+  
+  subPhase      SubPhase? @relation(fields: [subPhaseId], references: [id], onDelete: Cascade)
+  subPhaseId    String?
+  
+  hoursWorked   Float
+  quantityComplete Float?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model ChangeOrder {
+  id              String    @id @default(cuid())
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId       String
+  
+  subPhase        SubPhase  @relation(fields: [subPhaseId], references: [id], onDelete: Cascade)
+  subPhaseId      String
+  
+  additionalHours Float
+  reason          String
+  
+  createdBy       User      @relation(fields: [createdById], references: [id])
+  createdById     String
+  
+  createdAt       DateTime  @default(now())
+}
+
+model Equipment {
+  id              String    @id @default(cuid())
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId       String
+  
+  name            String    // "Excavator", "Concrete Pump", etc.
+  type            String    // "Heavy Equipment", "Tools", "Vehicles", etc.
+  supplier        String?   // Rental company name
+  
+  // Rental details
+  startDate       DateTime
+  endDate         DateTime?
+  rentalType      String    // "daily", "weekly", "monthly"
+  rate            Float     // Daily rate
+  weeklyRate      Float?    // Weekly rate from invoice
+  monthlyRate     Float?    // Monthly rate from invoice
+  
+  // Status tracking
+  status          String    @default("scheduled") // "scheduled", "active", "returned", "extended"
+  location        String?   // Current location/job site
+  
+  // Cost tracking
+  totalCost       Float?    // Calculated total cost
+  notes           String?   // Additional notes
+  
+  // Invoice tracking
+  invoiceNumber   String?   // Invoice reference
+  invoiceDate     DateTime?
+  invoiceUrl      String?   // Stored invoice file URL
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model EquipmentBudget {
+  id              String    @id @default(cuid())
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId       String
+  
+  costCode        String    // Cost code from CSV
+  equipmentType   String    // Type of equipment
+  quantity        Float     // Quantity needed
+  unit            String    // Unit of measure
+  budget          Float     // Budget amount
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model MaterialBudget {
+  id              String    @id @default(cuid())
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId       String
+  
+  costCode        String    // Cost code from CSV
+  materialType    String    // Type of material
+  quantity        Float     // Quantity needed
+  unit            String    // Unit of measure
+  budget          Float     // Budget amount
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model SubcontractorBudget {
+  id              String    @id @default(cuid())
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId       String
+  
+  costCode        String    // Cost code from CSV
+  subcontractorType String  // Type of subcontractor work
+  quantity        Float     // Quantity needed
+  unit            String    // Unit of measure
+  budget          Float     // Budget amount
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model ProjectSchedule {
+  id              String    @id @default(cuid())
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId       String    @unique
+  
+  // Store phase durations
+  phaseDurations  Json      // { phaseId: days }
+  
+  // Store schedule items
+  scheduleItems   ScheduleItem[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model ScheduleItem {
+  id              String    @id @default(cuid())
+  schedule        ProjectSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  scheduleId      String
+  
+  subPhaseId      String
+  subPhaseName    String
+  phaseName       String
+  
+  contractorDays  Int
+  plannedDays     Int
+  startDate       DateTime
+  endDate         DateTime
+  
+  budgetHours     Float
+  requiredWorkers Int
+  dailyHours      Float
+  budgetStatus    String    // "under", "on-target", "over"
+  variance        Float
+  
+  createdAt       DateTime  @default(now())
+}
+
+
+// Points and Rewards System
+model UserPoints {
+  id              String    @id @default(cuid())
+  user            User      @relation(fields: [userId], references: [id])
+  userId          String    @unique
+  
+  totalPoints     Int       @default(0)
+  currentPoints   Int       @default(0) // After redemptions
+  weeklyPoints    Int       @default(0)
+  monthlyPoints   Int       @default(0)
+  
+  // Streaks
+  checkInStreak   Int       @default(0)
+  lastCheckIn     DateTime?
+  
+  // Rankings
+  weeklyRank      Int?
+  monthlyRank     Int?
+  allTimeRank     Int?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model PointTransaction {
+  id              String    @id @default(cuid())
+  user            User      @relation(fields: [userId], references: [id])
+  userId          String
+  
+  points          Int       // Positive for earned, negative for redeemed
+  type            String    // "check_in", "task_complete", "achievement", "redemption", etc.
+  description     String
+  
+  // Related entities
+  dailyReportId   String?
+  achievementId   String?
+  rewardId        String?
+  
+  createdAt       DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([type])
+}
+
+model Achievement {
+  id              String    @id @default(cuid())
+  name            String
+  description     String
+  icon            String    // Emoji or icon name
+  points          Int
+  
+  // Requirements
+  type            String    // "check_in_streak", "tasks_completed", "perfect_week", etc.
+  threshold       Int       // e.g., 7 for 7-day streak
+  
+  // Users who earned it
+  earnedBy        UserAchievement[]
+  
+  createdAt       DateTime  @default(now())
+  
+  @@unique([type, threshold])
+}
+
+model UserAchievement {
+  id              String    @id @default(cuid())
+  user            User      @relation(fields: [userId], references: [id])
+  userId          String
+  achievement     Achievement @relation(fields: [achievementId], references: [id])
+  achievementId   String
+  
+  earnedAt        DateTime  @default(now())
+  
+  @@unique([userId, achievementId])
+}
+
+model Reward {
+  id              String    @id @default(cuid())
+  name            String
+  description     String
+  category        String    // "gift_card", "merchandise", "cash", "discount"
+  pointsCost      Int
+  
+  // Details
+  value           Float?    // Dollar value if applicable
+  vendor          String?   // e.g., "Amazon", "Home Depot"
+  imageUrl        String?
+  
+  // Availability
+  isActive        Boolean   @default(true)
+  stock           Int?      // null = unlimited
+  
+  redemptions     RewardRedemption[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model RewardRedemption {
+  id              String    @id @default(cuid())
+  user            User      @relation(fields: [userId], references: [id])
+  userId          String
+  reward          Reward    @relation(fields: [rewardId], references: [id])
+  rewardId        String
+  
+  pointsSpent     Int
+  status          String    @default("pending") // "pending", "approved", "delivered", "cancelled"
+  
+  // Fulfillment
+  code            String?   // Gift card code, discount code, etc.
+  deliveryInfo    Json?     // Address, email, etc.
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+}
+
+model DailyReportMaterial {
+  id              String    @id @default(cuid())
+  dailyReport     DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  reportId        String
+  
+  description     String
+  costCode        String?
+  quantity        Float?
+  unit            String?
+  unitPrice       Float?
+  amount          Float     @default(0)
+  supplier        String?
+  invoiceNumber   String?
+  invoiceUrl      String?
+  needsReview     Boolean   @default(false)
+  parsedData      Json?     // Store raw parsed invoice data
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model DailyReportEquipment {
+  id              String    @id @default(cuid())
+  dailyReport     DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  reportId        String
+
+  name            String
+  unitNumber      String?   // Equipment unit number
+  equipmentType   String?   // Type: excavator, scissor lift, etc
+  action          String    // "rent" or "return"
+  costCode        String?
+  supplier        String?
+  invoiceNumber   String?
+  invoiceUrl      String?
+  dailyRate       Float?
+  weeklyRate      Float?
+  monthlyRate     Float?
+  startDate       DateTime?
+  endDate         DateTime?
+  parsedData      Json?     // Store raw parsed invoice data
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Dispatch System Models
+model DispatchGroup {
+  id              String    @id @default(cuid())
+  name            String    // Project/site name
+  projectId       String?   // Optional link to existing project
+  location        String?
+  startTime       String    @default("7:00 AM") // Default start time
+  time            String    @default("7:00 AM") // Alternative time field
+  foremanId       String?   // User ID of the foreman
+  status          String    @default("active") // "active", "inactive", "deleted"
+  isDeleted       Boolean   @default(false) // Soft delete
+
+  crews           DispatchCrew[]
+  assignments     DispatchAssignment[]
+  workerAssignments WorkerAssignment[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([status])
+  @@index([isDeleted])
+}
+
+model DispatchCrew {
+  id              String    @id @default(cuid())
+  group           DispatchGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId         String
+
+  name            String    // "Crew 1", "Crew 2", "Crew A", etc.
+  startTime       String    // Specific start time for this crew
+  foremanId       String?   // Optional crew-specific foreman
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([groupId])
+}
+
+model DispatchAssignment {
+  id              String    @id @default(cuid())
+  user            User      @relation(fields: [userId], references: [id])
+  userId          String
+  group           DispatchGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId         String
+  crewId          String?   // Optional link to specific crew
+
+  date            DateTime
+  status          String    @default("pending") // "pending", "confirmed", "declined", "changed"
+  notes           String?
+
+  // Position in the group (for ordering)
+  position        Int       @default(0)
+
+  communications  DispatchCommunication[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userId, groupId, date])
+  @@index([userId])
+  @@index([groupId])
+  @@index([date])
+  @@index([status])
+  @@index([date, groupId]) // Optimized for dispatch page queries
+  @@index([userId, date]) // Optimized for user assignment lookups
+}
+
+model DispatchCommunication {
+  id              String    @id @default(cuid())
+  assignment      DispatchAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  assignmentId    String
+  user            User      @relation(fields: [userId], references: [id])
+  userId          String
+
+  direction       String    // "outbound", "inbound"
+  message         String
+  response        String?
+
+  // SMS/Twilio metadata
+  phoneNumber     String    // The phone number involved
+  twilioSid       String?   // Twilio message SID
+  twilioStatus    String?   // "queued", "sent", "delivered", "failed", "read"
+  errorCode       String?   // Twilio error code if failed
+  errorMessage    String?   // Twilio error message if failed
+
+  sentAt          DateTime  @default(now())
+  deliveredAt     DateTime?
+  readAt          DateTime?
+  repliedAt       DateTime?
+
+  createdAt       DateTime  @default(now())
+
+  @@index([assignmentId])
+  @@index([userId])
+  @@index([twilioSid])
+  @@index([phoneNumber])
+}
+
+// Dispatch workers - separate from User model for dispatch-specific workers
+model DispatchWorker {
+  id              String    @id @default(cuid())
+  name            String
+  phone           String    @unique
+  workerRole      String    // "carpenter", "laborer", "operator", "foreman", etc.
+  skills          String[]  @default([])
+  status          String    @default("active") // "active", "inactive", "deleted"
+  isDeleted       Boolean   @default(false) // Soft delete
+
+  // Optional link to User if this worker has an account
+  userId          String?   @unique
+  user            User?     @relation(fields: [userId], references: [id])
+
+  // Multi-tenancy
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([phone])
+  @@index([status])
+  @@index([isDeleted])
+}
+
+// Stores daily dispatch assignments (which workers are assigned to which projects)
+model DispatchSnapshot {
+  id              String    @id @default(cuid())
+  date            DateTime  @unique // The date this snapshot is for
+
+  // JSON blob storing just the assignments for this day
+  // Maps worker IDs to group IDs
+  assignments     Json
+
+  // Track who saved/modified the snapshot
+  savedBy         User?     @relation(fields: [savedById], references: [id])
+  savedById       String?
+
+  // Track if dispatch was sent out
+  dispatchSent    Boolean   @default(false)
+  dispatchSentAt  DateTime?
+
+  notes           String?   // Daily notes about the dispatch
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([date])
+}
+
+// Worker model for dispatch system
+model Worker {
+  id              String    @id @default(cuid())
+  name            String
+  phoneNumber     String    @unique
+  role            String    // "carpenter", "laborer", "operator", "foreman", etc.
+  skills          String[]  @default([])
+  status          String    @default("active") // "active", "inactive"
+
+  teamId          String?
+  team            Team?     @relation(fields: [teamId], references: [id])
+
+  assignments     WorkerAssignment[]
+  timeEntries     TimeEntry[]
+  messages        Message[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([phoneNumber])
+  @@index([status])
+}
+
+// Team model for grouping workers
+model Team {
+  id              String    @id @default(cuid())
+  name            String
+  description     String?
+
+  workers         Worker[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Time tracking model
+model TimeEntry {
+  id              String    @id @default(cuid())
+  workerId        String
+  worker          Worker    @relation(fields: [workerId], references: [id])
+
+  clockIn         DateTime
+  clockOut        DateTime?
+
+  location        String?   // GPS or manual location
+  notes           String?
+
+  timeAllocations TimeAllocation[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([workerId])
+  @@index([clockIn])
+}
+
+// Worker assignments to dispatch groups
+model WorkerAssignment {
+  id              String    @id @default(cuid())
+  workerId        String
+  worker          Worker    @relation(fields: [workerId], references: [id])
+
+  dispatchGroupId String
+  dispatchGroup   DispatchGroup @relation(fields: [dispatchGroupId], references: [id])
+
+  date            DateTime
+  status          String    @default("pending") // "pending", "confirmed", "completed"
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([workerId, dispatchGroupId, date])
+  @@index([workerId])
+  @@index([dispatchGroupId])
+  @@index([date])
+}
+
+// SMS message tracking
+model Message {
+  id              String    @id @default(cuid())
+  content         String
+  recipientPhone  String
+  recipientName   String
+  status          String    @default("PENDING") // "PENDING", "SENT", "DELIVERED", "FAILED"
+
+  workerId        String?
+  worker          Worker?   @relation(fields: [workerId], references: [id])
+
+  twilioSid       String?
+  errorMessage    String?
+
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([recipientPhone])
+  @@index([status])
+}
+
+model CostCode {
+  id              String    @id @default(cuid())
+  projectId       String?
+  project         Project?  @relation(fields: [projectId], references: [id])
+  code            String
+  description     String
+  category        String    // "labor", "material", "equipment"
+  budgetHours     Float?
+  budgetAmount    Float?
+  actualHours     Float     @default(0)
+  actualAmount    Float     @default(0)
+  isActive        Boolean   @default(true)
+  timeAllocations TimeAllocation[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([projectId, code])
+  @@index([projectId])
+}
+
+model TimeAllocation {
+  id              String    @id @default(cuid())
+  timeEntryId     String
+  timeEntry       TimeEntry @relation(fields: [timeEntryId], references: [id])
+  costCodeId      String
+  costCode        CostCode  @relation(fields: [costCodeId], references: [id])
+  hours           Float
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([timeEntryId, costCodeId])
+  @@index([timeEntryId])
+  @@index([costCodeId])
+}
+
+model HoursApproval {
+  id              String    @id @default(cuid())
+  projectId       String
+  project         Project   @relation(fields: [projectId], references: [id])
+  weekEnding      DateTime
+  totalHours      Float
+  totalWorkers    Int
+  totalAmount     Float?
+  status          String    @default("pending") // "pending", "approved", "rejected", "revised"
+  submittedBy     String
+  submittedAt     DateTime  @default(now())
+  approvedBy      String?
+  approvedAt      DateTime?
+  notes           String?
+  revisionNotes   String?
+  // Store detailed breakdown
+  breakdown       Json      // Array of { workerId, name, hours, costCode, amount }
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([projectId, weekEnding])
+  @@index([projectId])
+  @@index([status])
+  @@index([weekEnding])
+}

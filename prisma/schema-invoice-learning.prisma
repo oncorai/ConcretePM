@@ -1,0 +1,123 @@
+// Add these models to your existing schema
+
+// Stores learned patterns for each vendor/contractor
+model VendorPattern {
+  id              String    @id @default(cuid())
+  vendorName      String
+  projectId       String?   // Can be project-specific or global
+
+  // Pattern recognition data
+  logoPosition    Json?     // {x, y, width, height} for logo location
+  invoiceNumberPattern String? // Regex pattern for invoice numbers
+  datePattern     String?   // Regex pattern for dates
+  totalPattern    String?   // Regex pattern for totals
+
+  // Common field locations (learned from confirmations)
+  fieldMappings   Json      // {"invoiceNumber": {x, y}, "date": {x, y}, etc}
+
+  // Keywords that identify this vendor
+  identifyingKeywords String[] // ["ACME Corp", "Federal Tax ID: 12-345"]
+
+  // Layout type
+  layoutType      String    @default("standard") // "standard", "table", "itemized"
+
+  // Confidence and usage stats
+  confidence      Float     @default(0.5) // Increases with successful parses
+  timesUsed       Int       @default(0)
+  lastUsed        DateTime?
+
+  // Sample successful extractions for reference
+  successfulExtractions Json[] // Array of confirmed good extractions
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([vendorName, projectId])
+  @@index([vendorName])
+  @@index([confidence])
+}
+
+// Stores parsing history with corrections for learning
+model InvoiceParseHistory {
+  id              String    @id @default(cuid())
+
+  // Original submission
+  imageUrl        String    // S3/storage URL of invoice image
+  submittedBy     String    // Phone number who submitted
+  submittedAt     DateTime
+
+  // AI extraction attempt
+  aiExtraction    Json      // What the AI initially extracted
+  aiConfidence    Float     // Confidence score 0-1
+  vendorDetected  String?   // Which vendor pattern was used
+
+  // Human corrections
+  corrections     Json?     // User's corrections to AI extraction
+  confirmedBy     String?   // Phone number who confirmed
+  confirmedAt     DateTime?
+
+  // Final verified data
+  finalData       Json?     // The final confirmed data
+
+  // Extracted key fields for quick access
+  invoiceNumber   String?
+  vendorName      String?
+  totalAmount     Float?
+  invoiceDate     DateTime?
+
+  // Learning feedback
+  wasCorrect      Boolean?  // Was the AI extraction correct?
+  correctionNotes String?   // What was wrong
+
+  // Link to project/equipment/material
+  projectId       String?
+  equipmentId     String?
+  materialBudgetId String?
+
+  createdAt       DateTime  @default(now())
+
+  @@index([vendorName])
+  @@index([submittedBy])
+  @@index([wasCorrect])
+}
+
+// Templates for common invoice types
+model InvoiceTemplate {
+  id              String    @id @default(cuid())
+  name            String    // "Standard Equipment Rental", "Material Purchase Order"
+  category        String    // "equipment", "material", "subcontractor"
+
+  // Expected fields for this template
+  requiredFields  String[]  // ["invoiceNumber", "date", "vendor", "total"]
+  optionalFields  String[]  // ["poNumber", "terms", "taxId"]
+
+  // Common patterns seen in this type
+  commonPatterns  Json      // Regex patterns for different fields
+
+  // Validation rules
+  validationRules Json      // {"total": {"min": 0}, "date": {"maxDaysAgo": 30}}
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Tracks learning progress and accuracy
+model ParserAccuracy {
+  id              String    @id @default(cuid())
+  date            DateTime  @unique
+
+  totalAttempts   Int       @default(0)
+  correctFirst    Int       @default(0) // Correct on first try
+  correctedCount  Int       @default(0) // Needed correction
+  failedCount     Int       @default(0) // Couldn't parse
+
+  // Per vendor accuracy
+  vendorAccuracy  Json      // {"vendorName": {attempts: 10, correct: 8}}
+
+  // Per field accuracy
+  fieldAccuracy   Json      // {"invoiceNumber": 0.95, "total": 0.89}
+
+  createdAt       DateTime  @default(now())
+
+  @@index([date])
+}

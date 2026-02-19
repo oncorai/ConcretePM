@@ -1,0 +1,240 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String
+  role          Role      @default(SUPERVISOR)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  company       Company?  @relation(fields: [companyId], references: [id])
+  companyId     String?
+  
+  projects      ProjectUser[]
+  dailyReports  DailyReport[]
+  
+  @@index([email])
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  SUPERVISOR
+  VIEWER
+}
+
+model Company {
+  id            String    @id @default(cuid())
+  name          String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  users         User[]
+  projects      Project[]
+}
+
+model Project {
+  id            String    @id @default(cuid())
+  name          String
+  projectNumber String    @unique
+  location      String
+  startDate     DateTime
+  endDate       DateTime
+  status        ProjectStatus @default(ACTIVE)
+  
+  company       Company   @relation(fields: [companyId], references: [id])
+  companyId     String
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  users         ProjectUser[]
+  phases        ProjectPhase[]
+  equipment     ProjectEquipment[]
+  dailyReports  DailyReport[]
+  
+  @@index([projectNumber])
+  @@index([status])
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+model ProjectUser {
+  id            String    @id @default(cuid())
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String
+  project       Project   @relation(fields: [projectId], references: [id])
+  projectId     String
+  role          String    // "Project Manager", "Superintendent", "Foreman", etc.
+  
+  @@unique([userId, projectId])
+}
+
+model ProjectPhase {
+  id            String    @id @default(cuid())
+  project       Project   @relation(fields: [projectId], references: [id])
+  projectId     String
+  
+  name          String    // "Trench 1", "Foundation", etc.
+  scopePercent  Float     // % of total project scope
+  
+  // Bid/Budget data
+  budgetedHours Float
+  budgetedUnits Float?    // Could be ft, cy, sf, etc.
+  unitType      String?   // "ft", "cy", "sf", etc.
+  budgetedCost  Float?
+  
+  // Current status
+  status        PhaseStatus @default(NOT_STARTED)
+  actualStart   DateTime?
+  actualEnd     DateTime?
+  
+  activities    Activity[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@index([projectId])
+}
+
+enum PhaseStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  ON_HOLD
+}
+
+model Activity {
+  id            String    @id @default(cuid())
+  phase         ProjectPhase @relation(fields: [phaseId], references: [id])
+  phaseId       String
+  
+  name          String    // "Excavation", "Backfill", etc.
+  budgetedHours Float?
+  budgetedUnits Float?
+  unitType      String?
+  
+  dailyProgress DailyProgress[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model ProjectEquipment {
+  id            String    @id @default(cuid())
+  project       Project   @relation(fields: [projectId], references: [id])
+  projectId     String
+  
+  name          String    // "Dumptrack", "Excavator", etc.
+  type          String    // "Owned", "Rented", "Subcontractor"
+  dailyRate     Float?
+  
+  // For rentals
+  rentalStart   DateTime?
+  rentalEnd     DateTime?
+  rentalCycle   Int?      // days in rental period
+  
+  equipmentUsage EquipmentUsage[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model DailyReport {
+  id            String    @id @default(cuid())
+  project       Project   @relation(fields: [projectId], references: [id])
+  projectId     String
+  
+  date          DateTime
+  weather       String?   // "Sunny", "Rain", etc.
+  temperature   Int?      // in Fahrenheit
+  
+  createdBy     User      @relation(fields: [createdById], references: [id])
+  createdById   String
+  
+  // Summary fields (calculated from progress entries)
+  totalHours    Float     @default(0)
+  totalWorkers  Int       @default(0)
+  
+  notes         String?   // General notes for the day
+  safetyNotes   String?   // Safety observations
+  
+  progress      DailyProgress[]
+  manpower      DailyManpower[]
+  equipment     EquipmentUsage[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@unique([projectId, date])
+  @@index([projectId, date])
+}
+
+model DailyProgress {
+  id            String    @id @default(cuid())
+  dailyReport   DailyReport @relation(fields: [dailyReportId], references: [id])
+  dailyReportId String
+  
+  activity      Activity  @relation(fields: [activityId], references: [id])
+  activityId    String
+  
+  hoursWorked   Float
+  unitsComplete Float?    // ft completed, cy moved, etc.
+  percentComplete Float   // % of this activity completed
+  
+  crew          String?   // "Crew A", "Subcontractor X", etc.
+  notes         String?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@index([dailyReportId])
+}
+
+model DailyManpower {
+  id            String    @id @default(cuid())
+  dailyReport   DailyReport @relation(fields: [dailyReportId], references: [id])
+  dailyReportId String
+  
+  role          String    // "Operator", "Laborer", "Carpenter", etc.
+  headcount     Int
+  hours         Float
+  
+  company       String?   // For subcontractors
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model EquipmentUsage {
+  id            String    @id @default(cuid())
+  dailyReport   DailyReport @relation(fields: [dailyReportId], references: [id])
+  dailyReportId String
+  
+  equipment     ProjectEquipment @relation(fields: [equipmentId], references: [id])
+  equipmentId   String
+  
+  hoursUsed     Float
+  idle          Boolean   @default(false)
+  notes         String?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}

@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Task" ADD COLUMN     "initialHours" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "initialQuantity" DOUBLE PRECISION;

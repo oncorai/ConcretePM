@@ -1,0 +1,14 @@
+Project Name,Test Project with Budget Dollars,,,,,
+Location,Test Site,,,,,
+Start Date,2025-01-15,,,,,
+,,,,,
+Phase,Subphase,Budget Hours,Budget Quantity,Unit,Budget Amount
+Foundation,CIP Walls - Strip & Clean up,24,"11,500",SF,"$45,000"
+Foundation,Form Large Area,48,"25,000",SF,"$125,000"
+Excavation,Mass Excavation,120,"5,250",CY,"$78,750"
+Concrete Work,Pour Slab,80,"10,000",SF,"$150,000"
+Concrete Work,Reinforcement,160,"125,500",LBS,"$188,250"
+Site Work,Clear and Grub,40,"2,500",LS,"$25,000"
+Site Work,Fine Grading,32,"15,000",SY,"$45,000"
+Utilities,Install Pipe,64,"1,200",LF,"$96,000"
+Utilities,Manholes,24,8,EA,"$32,000"

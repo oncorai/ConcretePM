@@ -1,0 +1,99 @@
+UNITED RENTALS
+Invoice #: 2024-1234
+Date: June 21, 2024
+
+Bill To:
+Construction Company
+123 Main St
+City, State 12345
+
+EQUIPMENT RENTAL INVOICE
+
+Equipment Details:
+------------------
+
+1. Telehandler Forklift
+   Model: JCB 540-170
+   Serial: TH2024-001
+   Rental Period: 03/25/25 - 06/21/25
+   Rate: $450/day
+   Days: 88
+   Total: $39,600
+
+2. Trash Hopper Attachment
+   Model: 2-Yard Hopper
+   Rental Period: 04/08/25 - 06/21/25
+   Rate: $150/day
+   Days: 74
+   Total: $11,100
+
+3. 3yd Front Loader
+   Model: CAT 938M
+   Rental Period: 05/15/25 - 06/21/25
+   Rate: $600/day
+   Days: 37
+   Total: $22,200
+
+4. Utility Vehicle
+   Model: Kubota RTV-X1100C
+   Rental Period: 03/25/25 - 06/21/25
+   Rate: $200/day
+   Days: 88
+   Total: $17,600
+
+5. Water Truck #2
+   Model: 4000 Gallon Water Truck
+   Rental Period: 03/26/25 - 06/21/25
+   Rate: $400/day
+   Days: 87
+   Total: $34,800
+
+6. 5yd Dumptruck #1
+   Model: International HV607
+   Rental Period: 06/09/25 - 06/21/25
+   Rate: $500/day
+   Days: 12
+   Total: $6,000
+
+7. 5yd Dumptruck #2
+   Model: International HV607
+   Rental Period: 06/09/25 - 06/21/25
+   Rate: $500/day
+   Days: 12
+   Total: $6,000
+
+8. 2500lb Skidsteer
+   Model: Bobcat S650
+   Rental Period: 05/27/25 - 06/21/25
+   Rate: $350/day
+   Days: 25
+   Total: $8,750
+
+9. Plate Tamper
+   Model: Wacker Neuson VP2050
+   Rental Period: 06/10/25 - 06/21/25
+   Rate: $100/day
+   Days: 11
+   Total: $1,100
+
+10. 6" Concrete Saw
+    Model: Husqvarna FS 400 LV
+    Rental Period: 06/20/25 - 06/21/25
+    Rate: $150/day
+    Days: 1
+    Total: $150
+
+11. Water Truck #1
+    Model: 4000 Gallon Water Truck
+    Rental Period: 06/16/25 - 06/21/25
+    Rate: $400/day
+    Days: 5
+    Total: $2,000
+
+------------------
+SUBTOTAL: $149,300
+TAX (8%): $11,944
+TOTAL DUE: $161,244
+
+Payment Terms: Net 30
+Thank you for your business!
