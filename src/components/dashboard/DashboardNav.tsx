@@ -49,10 +49,9 @@ export default function DashboardNav({ user }: DashboardNavProps) {
 
   const contractorNavItems = [
     { href: "/dashboard", label: "Overview", icon: Home },
-    { href: "/dashboard/dispatch", label: "Dispatch", icon: Send },
-    { href: "/dashboard/teams", label: "Teams", icon: Users },
-    { href: "/dashboard/workers", label: "Workers", icon: User },
-    { href: "/dashboard/jobs", label: "Job Postings", icon: ClipboardList },
+    { href: "/dashboard/projects", label: "Projects", icon: ClipboardList },
+    { href: "/dashboard/daily", label: "Daily Reports", icon: Activity },
+    { href: "/dashboard/leaderboards", label: "Leaderboards", icon: Trophy },
   ];
 
   const navItems = user.role === "WORKER" ? workerNavItems : contractorNavItems;
@@ -83,8 +82,8 @@ export default function DashboardNav({ user }: DashboardNavProps) {
                 <HardHat className="h-8 w-8 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="font-bold text-xl">Leaderboards</h1>
-                <p className="text-sm text-muted-foreground">Construction Productivity</p>
+                <h1 className="font-bold text-xl">ConcretePM</h1>
+                <p className="text-sm text-muted-foreground">Project Management</p>
               </div>
             </Link>
           </div>
