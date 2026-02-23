@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { createDispatchGroupForProject } from "@/lib/dispatch-sync";
 
 export async function GET(req: Request) {
   try {
@@ -90,9 +89,6 @@ export async function POST(req: Request) {
         tasks: true,
       },
     });
-
-    // Auto-create dispatch group for this project
-    await createDispatchGroupForProject(project.id);
 
     return NextResponse.json(project, { status: 201 });
   } catch (error) {

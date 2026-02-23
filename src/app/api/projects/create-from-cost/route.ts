@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { PrismaClient } from "@prisma/client";
-import { createDispatchGroupForProject } from "@/lib/dispatch-sync";
 
 const prisma = new PrismaClient();
 
@@ -195,9 +194,6 @@ export async function POST(req: NextRequest) {
         data: subcontractorBudgetData
       });
     }
-
-    // Auto-create dispatch group for this project
-    await createDispatchGroupForProject(project.id);
 
     return NextResponse.json({
       projectId: project.id,
