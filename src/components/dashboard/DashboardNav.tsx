@@ -50,6 +50,9 @@ export default function DashboardNav({ user }: DashboardNavProps) {
   const contractorNavItems = [
     { href: "/dashboard", label: "Overview", icon: Home },
     { href: "/dashboard/projects", label: "Projects", icon: ClipboardList },
+    { href: "/dashboard/buyout", label: "Buyout", icon: Gift },
+    { href: "/dashboard/submittals", label: "Submittals", icon: ClipboardList },
+    { href: "/dashboard/rfis", label: "RFIs", icon: MessageCircle },
     { href: "/dashboard/daily", label: "Daily Reports", icon: Activity },
     { href: "/dashboard/leaderboards", label: "Leaderboards", icon: Trophy },
   ];
