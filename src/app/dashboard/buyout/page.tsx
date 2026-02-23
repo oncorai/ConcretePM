@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/Card";
+import { useProject } from "@/context/ProjectContext";
 import {
   Plus,
   ChevronDown,
@@ -48,10 +49,8 @@ interface BuyoutItem {
   notes?: string;
 }
 
-// Mock project ID - in real app, get from URL or context
-const PROJECT_ID = "demo-project";
-
 export default function BuyoutPage() {
+  const { selectedProject } = useProject();
   const [categories, setCategories] = useState<BuyoutCategory[]>([]);
   const [buyoutItems, setBuyoutItems] = useState<BuyoutItem[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
@@ -81,11 +80,11 @@ export default function BuyoutPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [selectedProject?.id]);
 
   async function loadData() {
+    // Always load categories
     try {
-      // Load categories
       const catRes = await fetch("/api/buyout/categories");
       if (catRes.ok) {
         const cats = await catRes.json();
@@ -93,16 +92,25 @@ export default function BuyoutPage() {
       } else {
         setCategories(defaultCategories);
       }
+    } catch (error) {
+      console.error("Error loading categories:", error);
+      setCategories(defaultCategories);
+    }
 
-      // Load buyout items
-      const itemsRes = await fetch(`/api/buyout?projectId=${PROJECT_ID}`);
+    // Load buyout items only if project selected
+    if (!selectedProject?.id) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const itemsRes = await fetch(`/api/buyout?projectId=${selectedProject.id}`);
       if (itemsRes.ok) {
         const items = await itemsRes.json();
         setBuyoutItems(items);
       }
     } catch (error) {
-      console.error("Error loading data:", error);
-      setCategories(defaultCategories);
+      console.error("Error loading buyout items:", error);
     } finally {
       setLoading(false);
     }
@@ -164,7 +172,7 @@ export default function BuyoutPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          projectId: PROJECT_ID,
+          projectId: selectedProject?.id,
           categoryId,
           description,
           budgetAmount: budgetAmount || null,
@@ -241,13 +249,23 @@ export default function BuyoutPage() {
     );
   }
 
+  if (!selectedProject) {
+    return (
+      <div className="p-8 text-center">
+        <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+        <h2 className="text-xl font-semibold mb-2">No Project Selected</h2>
+        <p className="text-muted-foreground mb-4">Select or create a project to manage buyouts.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Buyout Tracker</h1>
         <p className="text-muted-foreground mt-1">
-          Track material buyouts, quotes, and awards
+          {selectedProject.name} - Track material buyouts, quotes, and awards
         </p>
       </div>
 

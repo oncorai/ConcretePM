@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FolderOpen, LogOut, Menu, X, Trophy, Package, FileText, MessageCircle, Droplets, Clock, Receipt, ClipboardList } from 'lucide-react';
+import ProjectSelector from './ProjectSelector';
 
 interface DashboardNavProps {
   user: {
@@ -47,16 +48,13 @@ export default function SimpleDashboardNav({ user }: DashboardNavProps) {
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
 
-            <Link href="/" className="flex items-center gap-3">
-              <img
-                src="/logo-small.png"
-                alt="Leaderboards Logo"
-                className="h-10 w-10 object-contain"
-              />
+            <Link href="/dashboard" className="flex items-center gap-3">
               <span className="font-semibold text-lg text-foreground">ConcretePM</span>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-6">
+            <ProjectSelector />
+
+            <nav className="hidden md:flex items-center gap-4">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
