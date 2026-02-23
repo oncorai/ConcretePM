@@ -67,6 +67,14 @@ model Project {
   schedule      ProjectSchedule?
   costCodes     CostCode[]
   hoursApprovals HoursApproval[]
+  
+  // PM Modules
+  buyoutItems   BuyoutItem[]
+  submittals    Submittal[]
+  rfis          RFI[]
+  delayLogs     DelayLog[]
+  pourLogs      PourLog[]
+  invoices      Invoice[]
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -783,4 +791,273 @@ model HoursApproval {
   @@index([projectId])
   @@index([status])
   @@index([weekEnding])
+}
+// ==========================================
+// CONCRETE PM MODULES
+// ==========================================
+
+// Buyout Categories - the 16 material types for concrete work
+model BuyoutCategory {
+  id              String    @id @default(cuid())
+  name            String    // "Concrete", "Rebar", "Lumber", etc.
+  orderIndex      Int       // For ordering in UI
+  isDefault       Boolean   @default(true) // Pre-loaded categories
+  
+  buyoutItems     BuyoutItem[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@unique([name])
+}
+
+// Buyout Items - individual materials within a category for a project
+model BuyoutItem {
+  id              String    @id @default(cuid())
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId       String
+  category        BuyoutCategory @relation(fields: [categoryId], references: [id])
+  categoryId      String
+  
+  description     String    // "4000 PSI Concrete", "#5 Rebar", etc.
+  budgetAmount    Float?    // From original estimate
+  quantity        Float?
+  unit            String?   // "CY", "TON", "LF", etc.
+  
+  // Quotes tracking
+  quotes          BuyoutQuote[]
+  
+  // Awarded supplier
+  awardedQuoteId  String?
+  awardedAmount   Float?
+  awardedDate     DateTime?
+  
+  status          String    @default("pending") // "pending", "quoted", "awarded", "ordered", "delivered"
+  notes           String?
+  
+  // Link to submittal once awarded
+  submittalId     String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([projectId])
+  @@index([categoryId])
+  @@index([status])
+}
+
+// Quotes from suppliers for buyout items
+model BuyoutQuote {
+  id              String    @id @default(cuid())
+  buyoutItem      BuyoutItem @relation(fields: [buyoutItemId], references: [id], onDelete: Cascade)
+  buyoutItemId    String
+  
+  supplierName    String
+  supplierContact String?
+  supplierPhone   String?
+  supplierEmail   String?
+  
+  quotedAmount    Float
+  quotedDate      DateTime  @default(now())
+  validUntil      DateTime?
+  
+  isWinner        Boolean   @default(false)
+  notes           String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([buyoutItemId])
+}
+
+// Submittal Log
+model Submittal {
+  id              String    @id @default(cuid())
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId       String
+  
+  number          String    // "001", "002", etc. - auto-generated
+  revision        String    @default("0") // "0", "1", "2" for revisions
+  
+  specSection     String?   // "03 30 00" - spec section reference
+  description     String    // "Concrete Mix Design 4000 PSI"
+  
+  // Parties
+  submittedTo     String?   // "Architect", "Engineer", "GC"
+  submittedBy     String?   // Supplier name
+  
+  // Dates
+  dateSubmitted   DateTime?
+  dateRequired    DateTime? // When we need it back
+  dateReturned    DateTime?
+  
+  // Status tracking
+  status          String    @default("pending") // "pending", "submitted", "approved", "approved_as_noted", "revise_resubmit", "rejected"
+  
+  // Links
+  buyoutItemId    String?   // Link back to buyout
+  
+  notes           String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@unique([projectId, number, revision])
+  @@index([projectId])
+  @@index([status])
+}
+
+// RFI Log
+model RFI {
+  id              String    @id @default(cuid())
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId       String
+  
+  number          String    // "001", "002", etc.
+  subject         String    // Brief title
+  question        String    // The actual question
+  
+  // Parties
+  from            String?   // Who's asking
+  to              String?   // "Architect", "Engineer", "Owner"
+  
+  // Dates
+  dateSubmitted   DateTime  @default(now())
+  dateRequired    DateTime? // When we need answer
+  dateAnswered    DateTime?
+  
+  // Response
+  answer          String?
+  answeredBy      String?
+  
+  // Impact
+  costImpact      Boolean   @default(false)
+  scheduleImpact  Boolean   @default(false)
+  impactDays      Int?
+  impactAmount    Float?
+  
+  status          String    @default("open") // "open", "answered", "closed"
+  
+  notes           String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@unique([projectId, number])
+  @@index([projectId])
+  @@index([status])
+}
+
+// Delay Log
+model DelayLog {
+  id              String    @id @default(cuid())
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId       String
+  
+  date            DateTime  // Date of delay
+  delayType       String    // "weather", "material", "labor", "gc", "owner", "inspection", "other"
+  
+  description     String
+  hoursLost       Float?
+  daysLost        Float?
+  
+  // Responsibility
+  responsible     String?   // Who caused it
+  isExcusable     Boolean   @default(false) // Excusable delay?
+  isCompensable   Boolean   @default(false) // Can we get paid?
+  
+  // Documentation
+  rfiId           String?   // Link to related RFI
+  
+  notes           String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([projectId])
+  @@index([date])
+  @@index([delayType])
+}
+
+// Pour Log / Concrete Log
+model PourLog {
+  id              String    @id @default(cuid())
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId       String
+  
+  pourDate        DateTime
+  pourNumber      String?   // "Pour 1", "Pour 2", etc.
+  
+  // Location/Description
+  location        String    // "Foundation Grid A-C / 1-3"
+  element         String?   // "Footing", "Slab", "Wall", "Column"
+  
+  // Concrete details
+  mixDesign       String?   // "4000 PSI"
+  supplier        String?   // "Ready Mix Co"
+  ticketNumbers   String?   // Comma-separated ticket numbers
+  
+  // Quantities
+  orderedCY       Float?
+  placedCY        Float?
+  returnedCY      Float?
+  
+  // Times
+  startTime       DateTime?
+  endTime         DateTime?
+  
+  // Testing
+  slump           String?   // "4 inch"
+  airContent      String?   // "5%"
+  temperature     String?   // "72°F"
+  cylindersTaken  Int?      // Number of test cylinders
+  
+  // Weather
+  weather         String?
+  ambientTemp     String?
+  
+  // Crew
+  crewSize        Int?
+  
+  notes           String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([projectId])
+  @@index([pourDate])
+}
+
+// Invoice Tracker
+model Invoice {
+  id              String    @id @default(cuid())
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId       String
+  
+  invoiceNumber   String
+  vendorName      String
+  
+  invoiceDate     DateTime
+  dueDate         DateTime?
+  
+  amount          Float
+  description     String?
+  
+  // Categorization
+  category        String?   // "material", "equipment", "labor", "sub"
+  costCode        String?
+  
+  // Payment tracking
+  status          String    @default("pending") // "pending", "approved", "paid", "disputed"
+  paidDate        DateTime?
+  paidAmount      Float?
+  
+  notes           String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([projectId])
+  @@index([status])
+  @@index([vendorName])
 }
