@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { FolderOpen, LogOut, Menu, X, Trophy, Send } from 'lucide-react';
+import { FolderOpen, LogOut, Menu, X, Trophy, Package, FileText, MessageCircle, Droplets, Clock, Receipt, ClipboardList } from 'lucide-react';
 
 interface DashboardNavProps {
   user: {
@@ -19,9 +19,14 @@ export default function SimpleDashboardNav({ user }: DashboardNavProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { href: '/dashboard', label: 'Leaderboards', icon: Trophy },
     { href: '/dashboard/projects', label: 'Projects', icon: FolderOpen },
-    { href: '/dashboard/dispatch', label: 'Dispatch', icon: Send },
+    { href: '/dashboard/buyout', label: 'Buyout', icon: Package },
+    { href: '/dashboard/submittals', label: 'Submittals', icon: FileText },
+    { href: '/dashboard/rfis', label: 'RFIs', icon: MessageCircle },
+    { href: '/dashboard/pours', label: 'Pours', icon: Droplets },
+    { href: '/dashboard/delays', label: 'Delays', icon: Clock },
+    { href: '/dashboard/invoices', label: 'Invoices', icon: Receipt },
+    { href: '/dashboard/daily', label: 'Daily', icon: ClipboardList },
   ];
 
   const handleSignOut = async () => {
@@ -48,7 +53,7 @@ export default function SimpleDashboardNav({ user }: DashboardNavProps) {
                 alt="Leaderboards Logo"
                 className="h-10 w-10 object-contain"
               />
-              <span className="font-semibold text-lg text-foreground">Leaderboards</span>
+              <span className="font-semibold text-lg text-foreground">ConcretePM</span>
             </Link>
 
             <nav className="hidden md:flex items-center gap-6">
