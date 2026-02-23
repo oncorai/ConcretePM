@@ -53,8 +53,10 @@ export default function DashboardNav({ user }: DashboardNavProps) {
     { href: "/dashboard/buyout", label: "Buyout", icon: Gift },
     { href: "/dashboard/submittals", label: "Submittals", icon: ClipboardList },
     { href: "/dashboard/rfis", label: "RFIs", icon: MessageCircle },
+    { href: "/dashboard/pours", label: "Pour Log", icon: Activity },
+    { href: "/dashboard/delays", label: "Delays", icon: HardHat },
+    { href: "/dashboard/invoices", label: "Invoices", icon: ClipboardList },
     { href: "/dashboard/daily", label: "Daily Reports", icon: Activity },
-    { href: "/dashboard/leaderboards", label: "Leaderboards", icon: Trophy },
   ];
 
   const navItems = user.role === "WORKER" ? workerNavItems : contractorNavItems;
