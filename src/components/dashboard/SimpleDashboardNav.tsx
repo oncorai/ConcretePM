@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { FolderOpen, LogOut, Menu, X, Trophy, Package, FileText, MessageCircle, Droplets, Clock, Receipt, ClipboardList } from 'lucide-react';
+import { FolderOpen, LogOut, Menu, X, Trophy, Package, FileText, MessageCircle, Droplets, Clock, Receipt, ClipboardList, Upload } from 'lucide-react';
 import ProjectSelector from './ProjectSelector';
 
 interface DashboardNavProps {
@@ -20,6 +20,7 @@ export default function SimpleDashboardNav({ user }: DashboardNavProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
+    { href: '/dashboard/scope', label: 'Scope', icon: Upload },
     { href: '/dashboard/projects', label: 'Projects', icon: FolderOpen },
     { href: '/dashboard/buyout', label: 'Buyout', icon: Package },
     { href: '/dashboard/submittals', label: 'Submittals', icon: FileText },

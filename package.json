@@ -13,6 +13,7 @@
     "bot": "tsx src/scripts/run-telegram-bot-v2.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "@auth/prisma-adapter": "^2.9.1",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
@@ -46,6 +47,7 @@
     "prisma": "^6.9.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-dropzone": "^15.0.0",
     "recharts": "^3.2.1",
     "sharp": "^0.34.2",
     "sonner": "^2.0.7",

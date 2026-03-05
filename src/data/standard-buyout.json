@@ -1,0 +1,189 @@
+{
+  "standardBuyoutItems": [
+    {
+      "id": 1,
+      "name": "Concrete",
+      "category": "Materials",
+      "submittalRequired": true,
+      "submittalType": "Mix Design"
+    },
+    {
+      "id": 2,
+      "name": "Rebar",
+      "category": "Materials",
+      "submittalRequired": true,
+      "submittalType": "Mill Certs"
+    },
+    {
+      "id": 3,
+      "name": "Lumber/Formwork",
+      "category": "Materials",
+      "submittalRequired": false
+    },
+    {
+      "id": 4,
+      "name": "Vapor Barrier",
+      "category": "Materials",
+      "submittalRequired": true,
+      "submittalType": "Product Data"
+    },
+    {
+      "id": 5,
+      "name": "Bond Breaker",
+      "category": "Materials",
+      "submittalRequired": true,
+      "submittalType": "Product Data"
+    },
+    {
+      "id": 6,
+      "name": "Cure/Densifier",
+      "category": "Materials",
+      "submittalRequired": true,
+      "submittalType": "Product Data"
+    },
+    {
+      "id": 7,
+      "name": "Chairs/Dobies",
+      "category": "Materials",
+      "submittalRequired": false
+    },
+    {
+      "id": 8,
+      "name": "Formsavers",
+      "category": "Materials",
+      "submittalRequired": false
+    },
+    {
+      "id": 9,
+      "name": "Waterstop",
+      "category": "Materials",
+      "submittalRequired": true,
+      "submittalType": "Product Data"
+    },
+    {
+      "id": 10,
+      "name": "Expansion Joint Material",
+      "category": "Materials",
+      "submittalRequired": true,
+      "submittalType": "Product Data"
+    },
+    {
+      "id": 11,
+      "name": "Patching Material",
+      "category": "Materials",
+      "submittalRequired": true,
+      "submittalType": "Product Data"
+    },
+    {
+      "id": 12,
+      "name": "Mastic/Sealant",
+      "category": "Materials",
+      "submittalRequired": true,
+      "submittalType": "Product Data"
+    },
+    {
+      "id": 13,
+      "name": "Dowel Baskets",
+      "category": "Materials",
+      "submittalRequired": false
+    },
+    {
+      "id": 14,
+      "name": "Epoxy (Drill & Set)",
+      "category": "Materials",
+      "submittalRequired": true,
+      "submittalType": "Product Data"
+    },
+    {
+      "id": 15,
+      "name": "Form Release Agent",
+      "category": "Materials",
+      "submittalRequired": false
+    },
+    {
+      "id": 16,
+      "name": "Corrosion Coating",
+      "category": "Materials",
+      "submittalRequired": true,
+      "submittalType": "Product Data"
+    },
+    {
+      "id": 17,
+      "name": "Floor Protection Material",
+      "category": "Materials",
+      "submittalRequired": false
+    },
+    {
+      "id": 18,
+      "name": "Winter Materials (Blankets/Heaters)",
+      "category": "Equipment",
+      "submittalRequired": false
+    },
+    {
+      "id": 19,
+      "name": "Concrete Pumping",
+      "category": "Subcontractor",
+      "submittalRequired": false
+    },
+    {
+      "id": 20,
+      "name": "Placing Equipment",
+      "category": "Equipment",
+      "submittalRequired": false
+    },
+    {
+      "id": 21,
+      "name": "Dewatering Equipment",
+      "category": "Equipment",
+      "submittalRequired": false
+    },
+    {
+      "id": 22,
+      "name": "Power/Lighting",
+      "category": "Equipment",
+      "submittalRequired": false
+    }
+  ],
+  "scopeSpecificItems": [
+    {
+      "trigger": "mockup",
+      "item": "Mockup Materials",
+      "submittalType": "Mockup Approval"
+    },
+    {
+      "trigger": "hot weather|cold weather|winter|ACI 305|ACI 306",
+      "item": "Hot/Cold Weather Plan",
+      "submittalType": "Weather Plan"
+    },
+    {
+      "trigger": "wash-out|washout",
+      "item": "Wash-out Plan",
+      "submittalType": "Wash-out Plan"
+    },
+    {
+      "trigger": "laser scan",
+      "item": "Laser Scanning",
+      "submittalType": "Scan Data"
+    },
+    {
+      "trigger": "leveling nut|anchor bolt",
+      "item": "Leveling Nuts/Anchor Bolts",
+      "submittalType": "Shop Drawings"
+    },
+    {
+      "trigger": "loading dock",
+      "item": "Loading Dock",
+      "submittalType": null
+    },
+    {
+      "trigger": "trench",
+      "item": "Trench Blockouts",
+      "submittalType": null
+    },
+    {
+      "trigger": "cylinder storage",
+      "item": "Cylinder Storage",
+      "submittalType": null
+    }
+  ]
+}
